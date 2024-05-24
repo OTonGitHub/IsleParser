@@ -1,6 +1,6 @@
 # IsleParser
 
-A quick and dirty scraper to grab and store articles from some maldivian news sites. Stores every article to a single table, by no means the best or performant scraper out there. I will improve it for a v2 when I get time though.
+A quick and dirty scraper to grab and store articles from some maldivian news sites. Stores every article to a single table, by no means the best or performant scraper out there. Code quality and architecture updates set for v2.
 
 ### Project Structure
 
@@ -55,15 +55,23 @@ IsleParser/
 
 ### Project Creation Commands
 
-- `dotnet new sln -n IsleParser`
-- `mksdir src`
-  > move Directory.Build.props into src.
-- `dotnet new gitignore`
-- `dotnet new console -lang "c#" -n "Console-UI" -f "net8.0" -o src/Console-UI -d -v diag`
-  - Note here, `.\` was not used when sepcifying output directory, usually, just -n is enough,
-    it will automatically create directory, use -o if you want folder name to be different,
-    or when grouping projects under specific folders.
-- `dotnet sln IsleParser.sln add src/IsleParser`
-- add Directory.Build.props and .editoconfig files for static code analysis.
-- `dotnet watch --no-hot-reload --project .NET-Server/src/API run --environment "Development"`
-  - `run` command conatins `--launch-profile "https"` flag too, watch might have.
+- #### Project Init
+  - `dotnet new sln -n IsleParser`
+  - `mksdir src`
+    > move Directory.Build.props into src.
+  - `dotnet new gitignore`
+  - `dotnet new console -lang "c#" -n "Console-UI" -f "net8.0" -o src/Console-UI -d -v diag`
+    - Note here, `.\` was not used when sepcifying output directory, usually, just -n is enough,
+      it will automatically create directory, use -o if you want folder name to be different,
+      or when grouping projects under specific folders.
+  - `dotnet sln IsleParser.sln add src/Console-UI`
+    - Will add `.csproj` to sln automatically.
+  - add Directory.Build.props and .editoconfig files for static code analysis.
+  - `dotnet watch --no-hot-reload --project .NET-Server/src/Console-UI run --environment "Development"`
+    - `run` command conatins `--launch-profile "https"` flag too, watch might have.
+- #### Nuget
+  - `dotnet add src/Console-UI package Microsoft.Playwright`
+  - `dotnet add src/Console-UI package HtmlAgilityPack`
+- #### Playwright
+  - `pwsh .NET-Server/src/Console-UI/bin/Debug/net8.0/playwright.ps1  install`
+  - `pwsh .NET-Server/src/Console-UI/bin/Debug/net8.0/playwright.ps1  install-deps`
