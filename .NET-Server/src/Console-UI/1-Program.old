@@ -1,0 +1,74 @@
+﻿using System;
+using System.Threading.Tasks;
+using HtmlAgilityPack;
+using Microsoft.Playwright;
+
+namespace ConsoleUI;
+sealed class Program
+{
+    static async Task Main(string[] args)
+    {
+        string appStart = "Running..";
+        Console.WriteLine(appStart);
+
+        // initialize Playwright
+        using var playwright = await Playwright.CreateAsync();
+        var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = true });
+
+        List<int> articleIds = Enumerable.Range(54131, 50).ToList();
+
+        // batch 10, Parallel
+        var tasks = Partition(articleIds, 10).Select(batch => Task.WhenAll(batch.Select(async articleId =>
+            {
+                string url = $"https://adhadhu.com/article/{articleId}";
+                try
+                {
+                    var page = await browser.NewPageAsync();
+                    var response = await page.GotoAsync(url);
+
+                    if (response.Status == 404 || response.Headers.ContainsKey("Location"))
+                    {
+                        Console.WriteLine($"Article {articleId} not found or redirected. Skipping...");
+                        await page.CloseAsync();
+                        return;
+                    }
+
+                    string content = await page.ContentAsync();
+                    await page.CloseAsync();
+
+                    // Load into HAP
+                    var htmlDoc = new HtmlDocument();
+                    htmlDoc.LoadHtml(content);
+
+                    var pTags = htmlDoc.DocumentNode.SelectNodes("//p[@class='font-faseyha font-19 color-black text-right mb-4']");
+                    if (pTags != null)
+                    {
+                        foreach (var pTag in pTags)
+                        {
+                            Console.WriteLine($"Article {articleId}: {pTag.InnerText.Trim()}");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"No paragraphs found in Article {articleId}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing Article {articleId}: {ex.Message}");
+                }
+            })));
+
+        await Task.WhenAll(tasks);
+        await browser.CloseAsync();
+    }
+
+    static IEnumerable<IEnumerable<T>> Partition<T>(IEnumerable<T> source, int batchSize)
+    {
+        while (source.Any())
+        {
+            yield return source.Take(batchSize);
+            source = source.Skip(batchSize);
+        }
+    }
+}

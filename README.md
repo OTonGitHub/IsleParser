@@ -2,6 +2,10 @@
 
 A quick and dirty scraper to grab and store articles from some maldivian news sites. Stores every article to a single table, by no means the best or performant scraper out there. Code quality and architecture updates set for v2.
 
+# VSCode
+
+- ctrl + b
+
 ### Project Structure
 
 - Core Library.
