@@ -19,7 +19,7 @@ namespace ConsoleUI
             var browser = await playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = true });
 
             // .Rane() => {start, count} highest = start + count - 1
-            List<int> articleIds = Enumerable.Range(54100, 50).ToList();
+            List<int> articleIds = Enumerable.Range(53000, 500).ToList();
 
             // semaphore to limit concurrency
             int maxConcurrency = 5;
@@ -30,8 +30,8 @@ namespace ConsoleUI
                 await semaphore.WaitAsync();
                 try
                 {
-                    string url = $"https://adhadhu.com/article/{articleId}";
-                    await ProcessArticleAsync(browser, url, articleId);
+                    string baseUrl = $"https://adhadhu.com/article/";
+                    await ProcessArticleAsync(browser, baseUrl, articleId);
                 }
                 finally
                 {
@@ -43,12 +43,12 @@ namespace ConsoleUI
             await browser.CloseAsync();
         }
 
-        static async Task ProcessArticleAsync(IBrowser browser, string url, int articleId)
+        static async Task ProcessArticleAsync(IBrowser browser, string baseUrl, int articleId)
         {
             try
             {
                 var page = await browser.NewPageAsync();
-                var response = await page.GotoAsync(url, new PageGotoOptions { WaitUntil = WaitUntilState.Load });
+                var response = await page.GotoAsync(baseUrl + articleId, new PageGotoOptions { WaitUntil = WaitUntilState.Load });
 
                 if (response.Status == 404 || response.Status == 500 || response.Headers.ContainsKey("Location"))
                 {
@@ -64,6 +64,20 @@ namespace ConsoleUI
                 var htmlDoc = new HtmlDocument();
                 htmlDoc.LoadHtml(content);
 
+                // find the category
+                var categoryDiv = htmlDoc.DocumentNode.SelectSingleNode("//div[@class='d-flex justify-content-end mt-3']");
+                string category = "Unknown";
+                if (categoryDiv != null)
+                {
+                    var anchorTag = categoryDiv.SelectSingleNode(".//a");
+                    if (anchorTag != null)
+                    {
+                        category = anchorTag.GetAttributeValue("href", "Unknown").Split('/').Last();
+                    }
+                }
+                Console.WriteLine($"Article {articleId} Category: {category}");
+
+                // find and print the paragraph tags
                 var pTags = htmlDoc.DocumentNode.SelectNodes("//p[@class='font-faseyha font-19 color-black text-right mb-4']");
                 if (pTags != null)
                 {
